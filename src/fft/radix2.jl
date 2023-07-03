@@ -86,11 +86,13 @@ Radix2 Kernel for 1D FFT
 
 Initialize and return a kernel with `fftsize` and specific type `T<:AbstractFloat`.
 
-    Radix2FFT{T}(fftsize::Integer) where T<:AbstractFloat
+    Radix2FFT{T}(fftsize::Int64) where T<:AbstractFloat
 
 Initialize and return a kernel with `fftsize` and default type `Float64`.
 
-    Radix2FFT(fftsize::Integer)
+    Radix2FFT(fftsize::Int64)
+
+The value of `fftsize` is strictly restricted to be 2 to an integer power.
 """
 struct Radix2FFT{T<:AbstractFloat}
     cache  ::Vector{Complex{T}}
@@ -98,15 +100,15 @@ struct Radix2FFT{T<:AbstractFloat}
     fftsize::Int
     ifswap ::Bool
 
-    function Radix2FFT{T}(fftsize::Integer) where T<:AbstractFloat # type-stability ✓
-        # fftsize should be power of 2
+    function Radix2FFT{T}(fftsize::Int64) where T<:AbstractFloat # type-stability ✓
+        iszero(clp2(fftsize) - fftsize) || throw(DomainError(fftsize)) 
         cache   = Vector{Complex{T}}(undef, fftsize)
         twiddle = Vector{Complex{T}}(undef, fftsize >> 1)
 
         return new{T}(cache, twiddle!(twiddle), fftsize, isone(pwr2(fftsize) & 1))
     end
 
-    Radix2FFT(fftsize::Integer) = Radix2FFT{Float64}(fftsize)
+    Radix2FFT(fftsize::Int64) = Radix2FFT{Float64}(fftsize)
 end
 
 """

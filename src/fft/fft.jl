@@ -16,6 +16,19 @@ function pwr2(x::Int64)
     return r
 end
 
+## power of radix 2 (ceiling mode)
+function clp2(x::Int64)
+    x ≡ 0 && return 1
+    x ≡ 1 && return 2
+    x = x - 1
+    x = x | (x >> 1)
+    x = x | (x >> 2)
+    x = x | (x >> 4)
+    x = x | (x >> 8)
+    x = x | (x >> 16)
+    return x + 1
+end
+
 include("./twiddle.jl")
 include("./radix2.jl")
 
