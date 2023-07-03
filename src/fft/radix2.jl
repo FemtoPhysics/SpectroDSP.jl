@@ -108,3 +108,39 @@ struct Radix2FFT{T<:AbstractFloat}
 
     Radix2FFT(fftsize::Integer) = Radix2FFT{Float64}(fftsize)
 end
+
+"""
+    fft!(x::AbstractVector{Complex{T}}, f::Radix2FFT{T}) where T<:AbstractFloat
+
+Perform Fast-Fourier Transform (FFT) in place on the time-domain signal sequence `x` using an FFT kernel `f`.
+The input sequence `x` will be overwritten by the FFT result.
+"""
+function fft!(x::VecI{Complex{T}}, f::Radix2FFT{T}) where T<:AbstractFloat
+    cache = f.cache
+    if f.ifswap
+        @simd for i in eachindex(cache)
+            @inbounds cache[i] = x[i]
+        end
+        ditnn!(cache, x, f.twiddle, f.fftsize >> 1)
+    else
+        ditnn!(x, cache, f.twiddle, f.fftsize >> 1)
+    end
+
+    return x
+end
+
+"""
+    fft(x::AbstractVector{Complex{T}}, f::Radix2FFT{T}) where T<:AbstractFloat
+    fft(x::AbstractVector{T},          f::Radix2FFT{T}) where T<:AbstractFloat
+
+Similar to `fft!`, the function will pass the **copy** of the given signal sequence to the `fft!` routine.
+"""
+fft(x::VecI{Complex{T}}, f::Radix2FFT{T}) where T<:AbstractFloat = fft!(copy(x), f)
+
+function fft(x::VecI{T}, f::Radix2FFT{T}) where T<:AbstractFloat
+    cx = similar(x, Complex{T})
+    @simd for i in eachindex(cx)
+        @inbounds cx[i] = x[i]
+    end
+    return fft!(cx, f)
+end
