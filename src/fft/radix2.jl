@@ -144,3 +144,48 @@ function fft(x::VecI{T}, f::Radix2FFT{T}) where T<:AbstractFloat
     end
     return fft!(cx, f)
 end
+
+"""
+    ifft!(x::AbstractVector{Complex{T}}, f::Radix2FFT{T}) where T<:AbstractFloat
+
+Perform Inverse-Fast-Fourier Transform (IFFT) in place on the frequency-domain signal sequence `x` using an FFT kernel `f`.
+The input sequence `x` will be overwritten by the IFFT result.
+"""
+function ifft!(x::VecI{Complex{T}}, f::Radix2FFT{T}) where T<:AbstractFloat
+    fftsize = f.fftsize
+    cache = f.cache
+
+    if f.ifswap
+        @simd for i in eachindex(x)
+            @inbounds cache[i] = conj(x[i])
+        end
+        ditnn!(cache, x, f.twiddle, fftsize >> 1)
+    else
+        @simd for i in eachindex(x)
+            @inbounds x[i] = conj(x[i])
+        end
+        ditnn!(x, cache, f.twiddle, fftsize >> 1)
+    end
+
+    @simd for i in eachindex(x)
+        @inbounds x[i] = conj(x[i]) / fftsize
+    end
+
+    return x
+end
+
+"""
+    ifft(x::AbstractVector{Complex{T}}, f::Radix2FFT{T}) where T<:AbstractFloat
+    ifft(x::AbstractVector{T},          f::Radix2FFT{T}) where T<:AbstractFloat
+
+Similar to `ifft!`, the function will pass the **copy** of the given signal sequence to the `ifft!` routine.
+"""
+ifft(x::VecI{Complex{T}}, f::Radix2FFT{T}) where T<:AbstractFloat = ifft!(copy(x), f)
+
+function ifft(x::VecI{T}, f::Radix2FFT{T}) where T<:AbstractFloat
+    cx = similar(x, Complex{T})
+    @simd for i in eachindex(cx)
+        @inbounds cx[i] = x[i]
+    end
+    return fft!(cx, f)
+end

@@ -1,6 +1,6 @@
 import SpectroDSP: FFT
 
-@testset "Test Twiddle Factors" begin
+@testset "Twiddle Factors" begin
     @test FFT.twiddle!(Vector{ComplexF64}(undef, 1)) == ComplexF64[1.0 + 0.0im]
     @test FFT.twiddle!(Vector{ComplexF64}(undef, 2)) == ComplexF64[1.0 + 0.0im, 0.0 - 1.0im]
     let tmp = 0.5 * sqrt(2.0)
@@ -25,4 +25,11 @@ end
     ans = [2.0 + 0.0im, -2.0 - 2.0im, 0.0 - 2.0im,  4.0 + 4.0im]
 
     @test ans == FFT.fft(dat, FFT.Radix2FFT(4))
+end
+
+@testset "Radix-2 IFFT" begin
+    dat = [2.0 + 0.0im, -2.0 - 2.0im, 0.0 - 2.0im,  4.0 + 4.0im]
+    ans = [1.0 + 0.0im,  2.0 - 1.0im, 0.0 - 1.0im, -1.0 + 2.0im]
+
+    @test ans == FFT.ifft(dat, FFT.Radix2FFT(4))
 end
