@@ -1,5 +1,5 @@
 module SpectroDSP
 
-greet() = print("Hello World!")
+include("./fft/fft.jl")
 
 end # module SpectroDSP
