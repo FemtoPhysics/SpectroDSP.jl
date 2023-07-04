@@ -111,25 +111,54 @@ struct Radix2FFT{T<:AbstractFloat} <: FFTKernel{T}
     Radix2FFT(fftsize::Int64) = Radix2FFT{Float64}(fftsize)
 end
 
+# = = = = = = = = = = = = = = = = = = = = = #
+# Foward Radix-2 Fast-Fourier Transform     #
+# = = = = = = = = = = = = = = = = = = = = = #
+
+function fft!(signal::VecI{Complex{T}}, buffer::VecI{Complex{T}}, twiddle::VecI{Complex{T}}, fftsize::Int, ifswap::Bool) where T<:AbstractFloat
+    if ifswap
+        @simd for i in eachindex(buffer)
+            @inbounds buffer[i] = signal[i]
+        end
+        ditnn!(buffer, signal, twiddle, fftsize >> 1)
+    else
+        ditnn!(signal, buffer, twiddle, fftsize >> 1)
+    end
+
+    return signal
+end
+
+# = = = = = = = = = = = = = = = = = = = = = #
+# Backward Radix-2 Fast-Fourier Transform   #
+# = = = = = = = = = = = = = = = = = = = = = #
+
+function ifft!(signal::VecI{Complex{T}}, buffer::VecI{Complex{T}}, twiddle::VecI{Complex{T}}, fftsize::Int, ifswap::Bool) where T<:AbstractFloat
+    if ifswap
+        @simd for i in eachindex(signal)
+            @inbounds buffer[i] = conj(signal[i])
+        end
+        ditnn!(buffer, signal, twiddle, fftsize >> 1)
+    else
+        @simd for i in eachindex(signal)
+            @inbounds signal[i] = conj(signal[i])
+        end
+        ditnn!(signal, buffer, twiddle, fftsize >> 1)
+    end
+
+    @simd for i in eachindex(signal)
+        @inbounds signal[i] = conj(signal[i]) / fftsize
+    end
+
+    return signal
+end
+
 """
-    fft!(x::AbstractVector{Complex{T}}, f::Radix2FFT{T}) where T<:AbstractFloat
+    fft!(x::AbstractVector{Complex{T}}, f::FFTKernel{T}) where T<:AbstractFloat
 
 Perform Fast-Fourier Transform (FFT) in place on the time-domain signal sequence `x` using an FFT kernel `f`.
 The input sequence `x` will be overwritten by the FFT result.
 """
-function fft!(x::VecI{Complex{T}}, f::Radix2FFT{T}) where T<:AbstractFloat
-    cache = f.cache
-    if f.ifswap
-        @simd for i in eachindex(cache)
-            @inbounds cache[i] = x[i]
-        end
-        ditnn!(cache, x, f.twiddle, f.fftsize >> 1)
-    else
-        ditnn!(x, cache, f.twiddle, f.fftsize >> 1)
-    end
-
-    return x
-end
+fft!(x::VecI{Complex{T}}, f::Radix2FFT{T}) where T<:AbstractFloat = fft!(x, f.cache, f.twiddle, f.fftsize, f.ifswap)
 
 """
     fft(x::AbstractVector{Complex{T}}, f::Radix2FFT{T}) where T<:AbstractFloat
@@ -148,33 +177,12 @@ function fft(x::VecI{T}, f::Radix2FFT{T}) where T<:AbstractFloat
 end
 
 """
-    ifft!(x::AbstractVector{Complex{T}}, f::Radix2FFT{T}) where T<:AbstractFloat
+    ifft!(x::AbstractVector{Complex{T}}, f::FFTKernel{T}) where T<:AbstractFloat
 
 Perform Inverse-Fast-Fourier Transform (IFFT) in place on the frequency-domain signal sequence `x` using an FFT kernel `f`.
 The input sequence `x` will be overwritten by the IFFT result.
 """
-function ifft!(x::VecI{Complex{T}}, f::Radix2FFT{T}) where T<:AbstractFloat
-    fftsize = f.fftsize
-    cache = f.cache
-
-    if f.ifswap
-        @simd for i in eachindex(x)
-            @inbounds cache[i] = conj(x[i])
-        end
-        ditnn!(cache, x, f.twiddle, fftsize >> 1)
-    else
-        @simd for i in eachindex(x)
-            @inbounds x[i] = conj(x[i])
-        end
-        ditnn!(x, cache, f.twiddle, fftsize >> 1)
-    end
-
-    @simd for i in eachindex(x)
-        @inbounds x[i] = conj(x[i]) / fftsize
-    end
-
-    return x
-end
+ifft!(x::VecI{Complex{T}}, f::Radix2FFT{T}) where T<:AbstractFloat = ifft!(x, f.cache, f.twiddle, f.fftsize, f.ifswap)
 
 """
     ifft(x::AbstractVector{Complex{T}}, f::Radix2FFT{T}) where T<:AbstractFloat
