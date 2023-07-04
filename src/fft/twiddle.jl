@@ -43,3 +43,16 @@ function twiddle!(wa::VecI{Complex{T}}) where T<:AbstractFloat
     return wa
 end
 
+circulantChirp(n::Int, N::Int) = cispi(n * n / N)
+
+function circulantChirp!(ca::VecI{Complex{T}}, M::Int, N::Int) where T<:AbstractFloat
+    Mp2 = M + 2
+    @inbounds ca[1] = complex(1.0, 0.0)
+    for i in 2:N
+        @inbounds ca[i] = ca[Mp2-i] = circulantChirp(i-1, N)
+    end
+    for i in N+1:M-N+1
+        @inbounds ca[i] = complex(0.0, 0.0)
+    end
+    return ca
+end

@@ -2,6 +2,8 @@ module FFT
 
 const VecI = AbstractVector
 
+abstract type FFTKernel{T<:AbstractFloat}  end
+
 ## power of radix 2 (flooring mode)
 function pwr2(x::Int64)
     x > 0 || error("pwr2(x): x should be positive!")

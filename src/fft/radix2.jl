@@ -94,14 +94,14 @@ Initialize and return a kernel with `fftsize` and default type `Float64`.
 
 The value of `fftsize` is strictly restricted to be 2 to an integer power.
 """
-struct Radix2FFT{T<:AbstractFloat}
+struct Radix2FFT{T<:AbstractFloat} <: FFTKernel{T}
     cache  ::Vector{Complex{T}}
     twiddle::Vector{Complex{T}}
     fftsize::Int
     ifswap ::Bool
 
     function Radix2FFT{T}(fftsize::Int64) where T<:AbstractFloat # type-stability ✓
-        iszero(clp2(fftsize) - fftsize) || throw(DomainError(fftsize)) 
+        iszero(clp2(fftsize) - fftsize) || throw(DomainError(fftsize))
         cache   = Vector{Complex{T}}(undef, fftsize)
         twiddle = Vector{Complex{T}}(undef, fftsize >> 1)
 
@@ -190,4 +190,47 @@ function ifft(x::VecI{T}, f::Radix2FFT{T}) where T<:AbstractFloat
         @inbounds cx[i] = x[i]
     end
     return fft!(cx, f)
+end
+
+"""
+Non-Radix2 Kernel for 1D FFT
+
+Initialize and return a kernel with `fftsize` and specific type `T<:AbstractFloat`.
+
+    NonRadix2FFT{T}(fftsize::Int64) where T<:AbstractFloat
+
+Initialize and return a kernel with `fftsize` and default type `Float64`.
+
+    NonRadix2FFT(fftsize::Int64)
+
+The value of `fftsize` is strictly restricted **NOT** to be 2 to an integer power.
+"""
+struct NonRadix2FFT{T<:AbstractFloat} <: FFTKernel{T}
+    cache0   ::Vector{Complex{T}} # Cache for Radix-2 ops
+    cache1   ::Vector{Complex{T}} # Cache for h, diag(h)
+    cache2   ::Vector{Complex{T}} # Cache for y, Y, Z, z
+    twiddle  ::Vector{Complex{T}} # Twddles for Radix-2 ops
+    circulant::Vector{Complex{T}} # Chirps for h
+    fftsize  ::Int
+    extsize  ::Int
+    ifswap   ::Bool
+
+    function NonRadix2FFT{T}(fftsize::Int64) where T<:AbstractFloat # type-stability ✓
+        iszero(clp2(fftsize) - fftsize) && throw(DomainError(fftsize))
+        extsize   = clp2((fftsize - 1) << 1) # extended size
+        cache0    = Vector{Complex{T}}(undef, extsize)
+        cache1    = Vector{Complex{T}}(undef, extsize)
+        cache2    = Vector{Complex{T}}(undef, extsize)
+        twiddle   = Vector{Complex{T}}(undef, extsize >> 1)
+        circulant = Vector{Complex{T}}(undef, extsize)
+        ifswap    = isone(pwr2(extsize) & 1)
+
+        return new{T}(
+            cache0, cache1, cache2, twiddle!(twiddle),
+            circulantChirp!(circulant, extsize, fftsize),
+            fftsize, extsize, isone(pwr2(extsize) & 1)
+        )
+    end
+
+    NonRadix2FFT(fftsize::Int64) = NonRadix2FFT{Float64}(fftsize)
 end
