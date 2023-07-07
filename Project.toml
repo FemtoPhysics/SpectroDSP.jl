@@ -1,4 +1,4 @@
 name = "SpectroDSP"
 uuid = "5e2e7c27-bd85-4a3a-900a-589fa65f5ed3"
 authors = ["brianyjtai1994 <brianyjtai1994@gmail.com>"]
-version = "0.1.8"
+version = "0.1.9"

@@ -31,7 +31,29 @@ function clp2(x::Int64)
     return x + 1
 end
 
+function swap!(x::VecI, i::Int, j::Int) # @code_warntype ✓
+    @inbounds temp = x[i]
+    @inbounds x[i] = x[j]
+    @inbounds x[j] = temp
+    return nothing
+end
+
+function apy2(x::Real, y::Real)
+    isnan(x) && return x
+    isnan(y) && return y
+    # general case
+    xabs = abs(x)
+    yabs = abs(y)
+    w = max(xabs, yabs)
+    z = min(xabs, yabs)
+    iszero(z) && return w
+    return w * sqrt(1.0 + abs2(z / w))
+end
+
+apy2(c::Complex) = apy2(c.re, c.im)
+
 include("./twiddle.jl")
 include("./radix2.jl")
+include("./utils.jl")
 
 end

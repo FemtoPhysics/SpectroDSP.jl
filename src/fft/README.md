@@ -75,6 +75,18 @@ FFT.ifft!(recovered_signal, fftkernel)
 recovered_signal = FFT.ifft(spectrum, fftkernel)
 ```
 
+### ## Obtain FFT Frequencies
+
+```julia
+freq = FFT.fftfreq(length(signal), Δt) # Δt is the timestep
+```
+
+### ## Obtain FFT Amplitude Spectrum
+
+```julia
+ampl = FFT.fftampl!(similar(signal), spectrum)
+```
+
 ## # Future Features
 
 Soon, this module will provide additional functionality:
@@ -90,5 +102,7 @@ Soon, this module will provide additional functionality:
 - [ ] R2C-FFT for arbitrary sizes
 - [x] C2C-IFFT for radix-2 sizes
 - [ ] C2C-IFFT for arbitrary sizes
+- [x] FFT Frequency
+- [x] FFT Amplitude
 
 Stay tuned for updates and new releases!

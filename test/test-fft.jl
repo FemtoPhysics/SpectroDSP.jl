@@ -70,3 +70,9 @@ end
 
     @test ans ≈ FFT.fft(dat, FFT.NonRadix2FFT(length(dat)))
 end
+
+@testset "FFT Frequency" begin
+    @test FFT.fftfreq(8, 0.1) == [0.0, 1.25, 2.5, 3.75, -5.0, -3.75, -2.5, -1.25]
+    @test FFT.fftfreq(7, 0.1) ≈  [0.0, 1.42857143, 2.85714286, 4.28571429,
+                                  -4.28571429, -2.85714286, -1.42857143]
+end
